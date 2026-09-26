@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fareboard — compare flights, trains, buses</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1C2541;
+    --ink-soft:#3A4568;
+    --paper:#F7F3EA;
+    --paper-card:#FFFFFF;
+    --amber:#E8A33D;
+    --amber-dark:#95611D;
+    --teal:#2F6B67;
+    --teal-light:#E3EFEC;
+    --line:#DCD6C6;
+    --line-strong:#B9B2A0;
+    --danger:#B23A34;
+    --text-secondary:#6B6659;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:960px;
+    margin:0 auto;
+    padding:32px 20px 80px;
+  }
+  header{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:28px;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:14px;
+  }
+  .brand{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:26px;
+    letter-spacing:-0.02em;
+  }
+  .brand span{color:var(--amber-dark);}
+  .tagline{
+    font-size:13px;
+    color:var(--text-secondary);
+  }
+  .modes{
+    display:flex;
+    gap:0;
+    margin-bottom:0;
+    border:1.5px solid var(--ink);
+    border-bottom:none;
+    width:fit-content;
+    border-radius:8px 8px 0 0;
+    overflow:hidden;
+  }
+  .mode-btn{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:10px 22px;
+    background:var(--paper);
+    border:none;
+    border-right:1.5px solid var(--ink);
+    cursor:pointer;
+    color:var(--ink-soft);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .mode-btn:last-child{border-right:none;}
+  .mode-btn.active{
+    background:var(--ink);
+    color:var(--paper);
+  }
+  .search-panel{
+    background:var(--paper-card);
+    border:1.5px solid var(--ink);
+    border-radius:0 8px 8px 8px;
+    padding:20px;
+    margin-bottom:32px;
+  }
+  .search-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-bottom:14px;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+  }
+  .field label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--text-secondary);
+    font-weight:600;
+  }
+  .field input, .field select{
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    padding:9px 10px;
+    border:1px solid var(--line-strong);
+    border-radius:5px;
+    background:#fff;
+    color:var(--ink);
+  }
+  .field input:focus, .field select:focus{
+    outline:none;
+    border-color:var(--ink);
+  }
+  .swap-row{
+    display:flex;
+    align-items:end;
+    gap:14px;
+  }
+  .search-btn{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    background:var(--amber);
+    color:#3A2205;
+    border:none;
+    border-radius:6px;
+    padding:11px 26px;
+    cursor:pointer;
+    width:100%;
+    margin-top:6px;
+  }
+  .search-btn:hover{background:#DE9425;}
+  .results-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:14px;
+  }
+  .results-head h2{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:17px;
+    font-weight:600;
+    margin:0;
+  }
+  .sort{
+    font-size:12px;
+    color:var(--text-secondary);
+  }
+  .sort select{
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    border:1px solid var(--line-strong);
+    border-radius:4px;
+    padding:4px 6px;
+    background:#fff;
+  }
+  .ticket{
+    background:var(--paper-card);
+    border:1px solid var(--line);
+    border-radius:8px;
+    margin-bottom:12px;
+    display:flex;
+    position:relative;
+    overflow:hidden;
+  }
+  .ticket-main{
+    flex:1;
+    padding:16px 18px;
+    display:flex;
+    align-items:center;
+    gap:20px;
+  }
+  .op-badge{
+    width:42px;
+    height:42px;
+    border-radius:7px;
+    background:var(--teal-light);
+    color:var(--teal);
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+  .route-info{flex:1;}
+  .op-name{
+    font-weight:600;
+    font-size:14px;
+    margin-bottom:2px;
+  }
+  .op-sub{
+    font-size:12px;
+    color:var(--text-secondary);
+  }
+  .times{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:15px;
+    font-weight:500;
+    white-space:nowrap;
+  }
+  .times .dur{
+    font-size:11px;
+    color:var(--text-secondary);
+    font-family:'Inter',sans-serif;
+    text-align:center;
+  }
+  .dash{
+    flex:1;
+    min-width:24px;
+    height:1px;
+    background:var(--line-strong);
+    position:relative;
+  }
+  .perforation{
+    width:0;
+    border-left:2px dashed var(--line-strong);
+    position:relative;
+  }
+  .perforation::before, .perforation::after{
+    content:'';
+    position:absolute;
+    left:-9px;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--paper);
+    border:1px solid var(--line);
+  }
+  .perforation::before{top:-9px;}
+  .perforation::after{bottom:-9px;}
+  .ticket-price{
+    width:150px;
+    flex-shrink:0;
+    padding:16px 18px;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    justify-content:center;
+    gap:8px;
+  }
+  .price{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:20px;
+    font-weight:700;
+  }
+  .price-sub{
+    font-size:11px;
+    color:var(--text-secondary);
+  }
+  .go-btn{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:12px;
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    border-radius:5px;
+    padding:8px 14px;
+    cursor:pointer;
+    width:100%;
+    text-align:center;
+    text-decoration:none;
+    display:block;
+  }
+  .go-btn:hover{background:var(--ink-soft);}
+  .cheapest-tag{
+    position:absolute;
+    top:-1px;
+    left:-1px;
+    background:var(--amber);
+    color:#3A2205;
+    font-size:10px;
+    font-weight:600;
+    padding:3px 10px 3px 12px;
+    border-radius:0 0 8px 0;
+    letter-spacing:0.02em;
+  }
+  .empty{
+    text-align:center;
+    padding:40px 20px;
+    color:var(--text-secondary);
+    font-size:14px;
+    border:1px dashed var(--line-strong);
+    border-radius:8px;
+  }
+  .disclaimer{
+    margin-top:28px;
+    font-size:12px;
+    color:var(--text-secondary);
+    border-top:1px solid var(--line);
+    padding-top:14px;
+    line-height:1.6;
+  }
+  @media (max-width:600px){
+    .search-row{grid-template-columns:1fr;}
+    .times{display:none;}
+    .ticket-main{gap:12px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="brand">Fare<span>board</span></div>
+      <div class="tagline">One search. Every operator. You book where you like.</div>
+    </div>
+  </header>
+
+  <div class="modes" id="modes">
+    <button class="mode-btn active" data-mode="flight">✈ Flights</button>
+    <button class="mode-btn" data-mode="train">🚆 Trains</button>
+    <button class="mode-btn" data-mode="bus">🚌 Buses</button>
+  </div>
+
+  <div class="search-panel">
+    <div class="search-row">
+      <div class="field">
+        <label>From</label>
+        <input id="from" type="text" placeholder="Delhi (DEL)" value="Delhi (DEL)">
+      </div>
+      <div class="field">
+        <label>To</label>
+        <input id="to" type="text" placeholder="Bengaluru (BLR)" value="Bengaluru (BLR)">
+      </div>
+    </div>
+    <div class="search-row">
+      <div class="field">
+        <label>Depart</label>
+        <input id="date" type="date">
+      </div>
+      <div class="field">
+        <label>Travellers</label>
+        <select id="pax">
+          <option>1 adult</option>
+          <option>2 adults</option>
+          <option>3 adults</option>
+          <option>Family (4)</option>
+        </select>
+      </div>
+    </div>
+    <button class="search-btn" id="searchBtn">Compare prices</button>
+  </div>
+
+  <div class="results-head">
+    <h2 id="resultsTitle">Flights, Delhi → Bengaluru</h2>
+    <div class="sort">
+      Sort by
+      <select id="sortSel">
+        <option value="price">Price</option>
+        <option value="duration">Duration</option>
+        <option value="departure">Departure time</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="results"></div>
+
+  <div class="disclaimer">
+    This page calls your backend at <code id="apiBaseNote"></code> for live results. If the backend isn't running, it falls back to sample data automatically. "View deal" opens a real search page on the operator/OTA site — not a payment page directly, since payment happens after the traveller picks a specific fare there.
+  </div>
+
+</div>
+
+<script>
+const DATA = {
+  flight: [
+    {op:"IndiGo", code:"6E", init:"6E", dep:"06:15", arr:"08:45", dur:"2h 30m", price:4899, site:"https://www.goindigo.in", tag:null},
+    {op:"Air India", code:"AI", init:"AI", dep:"09:20", arr:"11:55", dur:"2h 35m", price:5320, site:"https://www.airindia.com", tag:null},
+    {op:"Vistara", code:"UK", init:"UK", dep:"11:00", arr:"13:30", dur:"2h 30m", price:6150, site:"https://www.airvistara.com", tag:null},
+    {op:"SpiceJet", code:"SG", init:"SG", dep:"14:45", arr:"17:20", dur:"2h 35m", price:4599, site:"https://www.spicejet.com", tag:"cheapest"},
+    {op:"Akasa Air", code:"QP", init:"QP", dep:"18:30", arr:"21:00", dur:"2h 30m", price:5780, site:"https://www.akasaair.com", tag:null},
+  ],
+  train: [
+    {op:"Rajdhani Express", code:"12430", init:"RJ", dep:"20:40", arr:"05:55+1", dur:"9h 15m", price:2145, site:"https://www.irctc.co.in", tag:null},
+    {op:"Karnataka Express", code:"12628", init:"KE", dep:"21:15", arr:"09:30+1", dur:"12h 15m", price:1180, site:"https://www.irctc.co.in", tag:"cheapest"},
+    {op:"Sampark Kranti", code:"12649", init:"SK", dep:"06:10", arr:"18:50", dur:"12h 40m", price:1340, site:"https://www.irctc.co.in", tag:null},
+  ],
+  bus: [
+    {op:"VRL Travels", code:"AC Sleeper", init:"VR", dep:"19:00", arr:"11:30+1", dur:"16h 30m", price:1899, site:"https://www.redbus.in", tag:null},
+    {op:"SRS Travels", code:"Volvo Multi-Axle", init:"SR", dep:"20:15", arr:"13:00+1", dur:"16h 45m", price:1650, site:"https://www.redbus.in", tag:"cheapest"},
+    {op:"Orange Tours", code:"AC Seater/Sleeper", init:"OT", dep:"18:30", arr:"12:15+1", dur:"17h 45m", price:2050, site:"https://www.redbus.in", tag:null},
+  ]
+};
+
+// Point this at your deployed backend URL once it's live.
+// While developing locally, this default works if you run the backend
+// with `npm start` inside /backend (it listens on port 3001).
+const API_BASE = window.FAREBOARD_API_BASE || "http://localhost:3001";
+
+let currentMode = "flight";
+
+function durToMinutes(d){
+  const m = d.match(/(\d+)h\s*(\d+)m/);
+  return m ? parseInt(m[1])*60 + parseInt(m[2]) : 0;
+}
+
+function parsePlace(text){
+  const m = text.match(/^(.*?)\s*\(([A-Za-z]{3})\)\s*$/);
+  if(m) return {name: m[1].trim(), code: m[2].toUpperCase()};
+  return {name: text.trim(), code: text.trim().slice(0,3).toUpperCase()};
+}
+
+function formatDate(iso, style){
+  const d = new Date(iso + 'T00:00:00');
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const yyyy = d.getFullYear();
+  if(style === 'iso') return `${yyyy}-${mm}-${dd}`;
+  if(style === 'ddmmyyyy') return `${dd}${mm}${yyyy}`;
+  if(style === 'dd-mon-yyyy') return `${dd}-${months[d.getMonth()]}-${yyyy}`;
+  return iso;
+}
+
+function buildDeepLink(mode, fromText, toText, dateIso){
+  const from = parsePlace(fromText);
+  const to = parsePlace(toText);
+  if(mode === 'flight'){
+    const q = `Flights from ${from.code} to ${to.code} on ${formatDate(dateIso,'iso')}`;
+    return `https://www.google.com/travel/flights?q=${encodeURIComponent(q)}`;
+  }
+  if(mode === 'train'){
+    return `https://www.confirmtkt.com/train-list/${encodeURIComponent(from.name)}/${encodeURIComponent(to.name)}/${formatDate(dateIso,'ddmmyyyy')}`;
+  }
+  if(mode === 'bus'){
+    const slug = `${from.name.toLowerCase().replace(/\s+/g,'-')}-to-${to.name.toLowerCase().replace(/\s+/g,'-')}`;
+    return `https://www.redbus.in/bus-tickets/${encodeURIComponent(slug)}?fromCityName=${encodeURIComponent(from.name)}&toCityName=${encodeURIComponent(to.name)}&onward=${formatDate(dateIso,'dd-mon-yyyy')}`;
+  }
+  return '#';
+}
+
+function localMock(mode){
+  return DATA[mode] || [];
+}
+
+async function fetchResults(mode, fromCode, toCode, dateIso, fromName, toName){
+  try{
+    const url = `${API_BASE}/api/search/${mode}s?from=${encodeURIComponent(fromCode)}&to=${encodeURIComponent(toCode)}&date=${encodeURIComponent(dateIso)}`;
+    const r = await fetch(url);
+    if(!r.ok) throw new Error('bad response');
+    const data = await r.json();
+
+    if(mode === 'flight'){
+      return data.map(f => ({
+        op: f.airline, code: f.mock ? 'Illustrative' : 'Live fare', init: (f.airline||'??').slice(0,2).toUpperCase(),
+        dep: f.departure_at ? f.departure_at.split('T')[1]?.slice(0,5) || '--:--' : '--:--',
+        arr: '', dur: '', price: f.price, site: f.link, tag: null
+      }));
+    }
+    // trains/buses currently return a single deep-link entry, not itemized fares
+    return data.map(d => ({
+      op: mode === 'train' ? 'Search live results' : 'Search live results',
+      code: d.note || '', init: mode==='train'?'TR':'BU',
+      dep:'', arr:'', dur:'', price: null, site: d.link, tag: null
+    }));
+  } catch(err){
+    return null; // signal fallback to caller
+  }
+}
+
+async function render(){
+  const from = document.getElementById('from').value.trim() || "Origin";
+  const to = document.getElementById('to').value.trim() || "Destination";
+  const labelMap = {flight:"Flights", train:"Trains", bus:"Buses"};
+  document.getElementById('resultsTitle').textContent = `${labelMap[currentMode]}, ${from} → ${to}`;
+
+  const container = document.getElementById('results');
+  container.innerHTML = '<div class="empty">Searching…</div>';
+
+  const dateIso = document.getElementById('date').value || new Date().toISOString().split('T')[0];
+  const fromP = parsePlace(from), toP = parsePlace(to);
+
+  let items = await fetchResults(currentMode, fromP.code, toP.code, dateIso, fromP.name, toP.name);
+  let usedFallback = false;
+  if(items === null){
+    items = localMock(currentMode);
+    usedFallback = true;
+  }
+
+  const sortBy = document.getElementById('sortSel').value;
+  if(sortBy === 'price') items.sort((a,b)=>(a.price??Infinity)-(b.price??Infinity));
+  else if(sortBy === 'duration') items.sort((a,b)=>durToMinutes(a.dur||'')-durToMinutes(b.dur||''));
+  else if(sortBy === 'departure') items.sort((a,b)=>(a.dep||'').localeCompare(b.dep||''));
+
+  if(items.length === 0){
+    container.innerHTML = '<div class="empty">No results for this route yet.</div>';
+    return;
+  }
+
+  const deepLink = buildDeepLink(currentMode, from, to, dateIso);
+  const banner = usedFallback
+    ? `<div class="empty" style="margin-bottom:12px;border-style:solid;">Backend not reachable — showing sample data. Start the backend (see README) to load live results.</div>`
+    : '';
+
+  container.innerHTML = banner + items.map(it => `
+    <div class="ticket">
+      ${it.tag === 'cheapest' ? '<div class="cheapest-tag">Cheapest</div>' : ''}
+      <div class="ticket-main">
+        <div class="op-badge">${it.init}</div>
+        <div class="route-info">
+          <div class="op-name">${it.op}</div>
+          <div class="op-sub">${it.code}</div>
+        </div>
+        ${it.dep ? `<div class="times">
+          <div>${it.dep}</div>
+          <div class="dash"></div>
+          <div class="dur">${it.dur}</div>
+          <div class="dash"></div>
+          <div>${it.arr}</div>
+        </div>` : ''}
+      </div>
+      <div class="perforation"></div>
+      <div class="ticket-price">
+        <div>
+          ${it.price != null ? `<div class="price">₹${it.price.toLocaleString('en-IN')}</div><div class="price-sub">per traveller</div>` : '<div class="price-sub">See live fares</div>'}
+        </div>
+        <a class="go-btn" href="${it.site || deepLink}" target="_blank" rel="noopener">View deal ↗</a>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('modes').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.mode-btn');
+  if(!btn) return;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentMode = btn.dataset.mode;
+  render();
+});
+
+document.getElementById('searchBtn').addEventListener('click', render);
+document.getElementById('sortSel').addEventListener('change', render);
+
+const dateInput = document.getElementById('date');
+const today = new Date();
+today.setDate(today.getDate()+7);
+dateInput.value = today.toISOString().split('T')[0];
+
+document.getElementById('apiBaseNote').textContent = API_BASE;
+render();
+</script>
+</body>
+</html>
